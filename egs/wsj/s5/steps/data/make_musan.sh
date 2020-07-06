@@ -43,6 +43,7 @@ data_dir=$2
 mkdir -p local/musan.tmp
 
 # The below script will create the musan corpus
+# 在 ${data_dir}/musan 目录下创建了 utt2spk 和 wav.scp
 steps/data/make_musan.py --use-vocals ${use_vocals} \
                         --sampling-rate ${sampling_rate} \
                         ${in_dir} ${data_dir}/musan || exit 1;
@@ -66,6 +67,7 @@ utils/fix_data_dir.sh ${data_dir}/musan_noise
 
 rm -rf local/musan.tmp
 
+# 通过 wav.scp 获取，读取每个 wav 文件
 for name in speech noise music; do
     utils/data/get_reco2dur.sh ${data_dir}/musan_${name}
 done

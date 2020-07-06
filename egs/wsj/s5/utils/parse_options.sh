@@ -32,6 +32,7 @@
 
 # Now import all the configs specified by command-line, in left-to-right order
 for ((argpos=1; argpos<$#; argpos++)); do
+  # !: 间接引用，https://blog.csdn.net/u010720408/article/details/91392789
   if [ "${!argpos}" == "--config" ]; then
     argpos_plus1=$((argpos+1))
     config=${!argpos_plus1}
@@ -45,6 +46,7 @@ done
 ### Now we process the command line options
 ###
 while true; do
+  # ${parameter:-default}: 在没有设置变量的情况下使用缺省值
   [ -z "${1:-}" ] && break;  # break if there are no arguments
   case "$1" in
     # If the enclosing script is called with --help option, print the help
@@ -63,6 +65,7 @@ while true; do
       # The test [ -z ${foo_bar+xxx} ] will return true if the variable foo_bar
       # is undefined.  We then have to wrap this test inside "eval" because
       # foo_bar is itself inside a variable ($name).
+      # ${parameter+alt_value}: 如果变量已被设置，使用 alt_value，否则使用空值。
       eval '[ -z "${'$name'+xxx}" ]' && echo "$0: invalid option $1" 1>&2 && exit 1;
 
       oldval="`eval echo \\$$name`";

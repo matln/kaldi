@@ -70,7 +70,7 @@ mkdir -p $dir/log
 
 utils/split_data.sh $data $nj
 echo "$0: extracting xvectors for $data"
-sdata=$data/split$nj/JOB
+sdata=$data/split${nj}/JOB
 
 # Set up the features
 feat="ark:apply-cmvn-sliding --norm-vars=false --center=true --cmn-window=300 scp:${sdata}/feats.scp ark:- | select-voiced-frames ark:- scp,s,cs:${sdata}/vad.scp ark:- |"

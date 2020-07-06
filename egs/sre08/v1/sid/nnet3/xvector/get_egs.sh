@@ -9,6 +9,7 @@
 # These egs consist of a data chunk and a zero-based speaker label.
 # Each archive of egs has, in general, a different input chunk-size.
 # We don't mix together different lengths in the same archive, because it
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # would require us to repeatedly run the compilation process within the same
 # training job.
 #
@@ -85,6 +86,7 @@ for f in $data/utt2num_frames $data/feats.scp ; do
   [ ! -f $f ] && echo "$0: expected file $f" && exit 1;
 done
 
+# 30
 feat_dim=$(feat-to-dim scp:$data/feats.scp -) || exit 1
 
 mkdir -p $dir/info $dir/info $dir/temp
@@ -101,6 +103,7 @@ if [ $stage -le 0 ]; then
   echo "$0: Preparing train and validation lists"
   # Pick a list of heldout utterances for validation egs
   awk '{print $1}' $data/utt2spk | utils/shuffle_list.pl | head -$num_heldout_utts > $temp/valid_uttlist || exit 1;
+  # 30
   # The remaining utterances are used for training egs
   utils/filter_scp.pl --exclude $temp/valid_uttlist $temp/utt2num_frames > $temp/utt2num_frames.train
   utils/filter_scp.pl $temp/valid_uttlist $temp/utt2num_frames > $temp/utt2num_frames.valid
@@ -117,6 +120,7 @@ fi
 
 num_pdfs=$(awk '{print $2}' $temp/utt2int | sort | uniq -c | wc -l)
 # The script assumes you've prepared the features ahead of time.
+# range 是每个 job 包含的所有 chunks
 feats="scp,s,cs:utils/filter_scp.pl $temp/ranges.JOB $data/feats.scp |"
 train_subset_feats="scp,s,cs:utils/filter_scp.pl $temp/train_subset_ranges.1 $data/feats.scp |"
 valid_feats="scp,s,cs:utils/filter_scp.pl $temp/valid_ranges.1 $data/feats.scp |"
@@ -127,6 +131,7 @@ num_train_subset_frames=$(awk '{n += $2} END{print n}' <$temp/utt2num_frames.tra
 
 echo $num_train_frames >$dir/info/num_frames
 num_train_archives=$[($num_train_frames*$num_repeats)/$frames_per_iter + 1]
+# 95 for voxceleb1
 echo "$0: Producing $num_train_archives archives for training"
 echo $num_train_archives > $dir/info/num_archives
 echo $num_diagnostic_archives > $dir/info/num_diagnostic_archives
@@ -198,6 +203,7 @@ if [ $stage -le 3 ]; then
       nnet3-xvector-get-egs --compress=$compress --num-pdfs=$num_pdfs $temp/ranges.$g \
       "`echo $feats | sed s/JOB/$g/g`" $outputs || touch $dir/.error &
   done
+  # &: 在后台运行
   train_subset_outputs=$(awk '{for(i=1;i<=NF;i++)printf("ark:%s ",$i);}' $temp/train_subset_outputs.1)
   echo "$0: Generating training subset examples on disk"
   $cmd $dir/log/train_subset_create_examples.1.log \

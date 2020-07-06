@@ -96,12 +96,18 @@ config_to_layer = {
 # config file.
 def xconfig_line_to_object(config_line, prev_layers = None):
     try:
-        x  = xutils.parse_config_line(config_line)
+        # print('--- (start) xconfig_line_to_object ---')
+        # print(config_line, file=sys.stdout)
+        # 去掉注释，将 config_line 变成 (string, dict) 的形式
+        x = xutils.parse_config_line(config_line)
+        # print(x, file=sys.stdout)
+        # print('--- (end) xconfig_line_to_object ---')
         if x is None:
             return None
         (first_token, key_to_value) = x
         if not first_token in config_to_layer:
             raise RuntimeError("No such layer type '{0}'".format(first_token))
+        # 在这里加上了其他的 config 项
         return config_to_layer[first_token](first_token, key_to_value, prev_layers)
     except Exception:
         logging.error(
@@ -147,7 +153,7 @@ def get_model_component_info(model_filename):
     for line in out.split("\n"):
         parts = line.split(" ")
         dim = -1
-        for  field in parts:
+        for field in parts:
             key_value = field.split("=")
             if len(key_value) == 2:
                 key = key_value[0]
@@ -195,7 +201,12 @@ def read_xconfig_file(xconfig_filename, existing_layers=None):
             break
         # the next call will raise an easy-to-understand exception if
         # it fails.
+        # print('--- read_xconfig_file -----')
+        # print("line: {0}".format(line))
+        # 在下面对 line 进行了扩展，加上了除了 name、dim 其他的设置
         this_layer = xconfig_line_to_object(line, existing_layers)
+        # print("this_layer: {0}".format(this_layer))
+        # print('--- (end) read_xconfig_file -----')
         if this_layer is None:
             continue  # line was blank after removing comments.
         all_layers.append(this_layer)

@@ -48,6 +48,8 @@ else
 fi
 
 # make $mfccdir an absolute pathname.
+# 如果在$dir左边匹配没有匹配到/
+# ${PWD}: /home/lijianchen/kaldi/egs/voxceleb/v2/steps
 mfccdir=`perl -e '($dir,$pwd)= @ARGV; if($dir!~m:^/:) { $dir = "$pwd/$dir"; } print $dir; ' $mfccdir ${PWD}`
 
 # use "name" as part of name of the archive.
@@ -66,6 +68,7 @@ scp=$data/wav.scp
 
 required="$scp $mfcc_config"
 
+# 判断所需要的wav.scp和mfcc-config文件是否存在
 for f in $required; do
   if [ ! -f $f ]; then
     echo "$0: no such file $f"
@@ -73,6 +76,8 @@ for f in $required; do
   fi
 done
 
+# 因为数据准备阶段的错误会影响后续脚本的运行，所以我们需要下面的脚本验证
+# 数据目录的文件格式是否正确
 utils/validate_data_dir.sh --no-text --no-feats $data || exit 1;
 
 if [ -f $data/spk2warp ]; then
@@ -85,6 +90,7 @@ else
   vtln_opts=""
 fi
 
+# TODO
 for n in $(seq $nj); do
   # the next command does nothing unless $mfccdir/storage/ exists, see
   # utils/create_data_link.pl for more info.
@@ -93,6 +99,7 @@ done
 
 
 if $write_utt2num_frames; then
+  # text格式的ark文件，ark有两种格式：text、binary
   write_num_frames_opt="--write-num-frames=ark,t:$logdir/utt2num_frames.JOB"
 else
   write_num_frames_opt=
@@ -130,12 +137,17 @@ else
     split_scps="$split_scps $logdir/wav_${name}.$n.scp"
   done
 
+  # 把$scp的所有行平均分成$nj份，最后剩下的几行单独一个个分配在前几个$n.scp
   utils/split_scp.pl $scp $split_scps || exit 1;
 
 
   # add ,p to the input rspecifier so that we can just skip over
   # utterances that have bad wave data.
 
+  # path:$KALDI_ROOT/src/featbin/compute-mfcc-feats, 
+  # compute-mfcc-feats 的wspecifier是输出到stdout，格式为ark，并通过管道传给copy-feats。rspecifier中
+  # 的p意味着当我们需要的文件不存在时，程序不会崩溃
+  # run.pl中，文件名中的"JOB"会被替换为$jobid 
   $cmd JOB=1:$nj $logdir/make_mfcc_${name}.JOB.log \
     compute-mfcc-feats $vtln_opts $write_utt2dur_opt --verbose=2 \
       --config=$mfcc_config scp,p:$logdir/wav_${name}.JOB.scp ark:- \| \

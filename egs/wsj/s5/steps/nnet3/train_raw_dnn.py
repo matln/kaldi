@@ -209,6 +209,7 @@ def train(args, run_opts):
         config_dir = '{0}/configs'.format(args.dir)
         var_file = '{0}/vars'.format(config_dir)
 
+        # model_left_context, model_right_context
         variables = common_train_lib.parse_generic_config_vars_file(var_file)
     else:
         # If args.input_model is specified, the model left and right contexts

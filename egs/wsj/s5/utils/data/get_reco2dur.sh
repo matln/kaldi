@@ -82,6 +82,7 @@ elif [ -f $data/wav.scp ]; then
     echo "$0: successfully obtained recording lengths from sphere-file headers"
   else
     echo "$0: could not get recording lengths from sphere-file headers, using wav-to-duration"
+    # 命令与函数同名，强制执行命令
     if ! command -v wav-to-duration >/dev/null; then
       echo  "$0: wav-to-duration is not on your path"
       exit 1;

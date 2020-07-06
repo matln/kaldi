@@ -15,7 +15,8 @@ use warnings; #sed replacement for -w perl parameter
 # ( my-prog '--opt=foo bar' foo |  other-prog baz ) >& some.log
 #
 # Basically it takes the command-line arguments, quotes them
-# as necessary to preserve spaces, and evaluates them with bash.
+# as necessary to preserve spaces(必要时用引号将其括起来以保留空格),
+# and evaluates them with bash.
 # In addition it puts the command line at the top of the log, and
 # the start and end times of the command at the beginning and end.
 # The reason why this is useful is so that we can create a different
@@ -38,10 +39,12 @@ $ignored_opts = ""; # These will be ignored.
 for (my $x = 1; $x <= 2; $x++) { # This for-loop is to
   # allow the JOB=1:n option to be interleaved with the
   # options to qsub.
+  # 在$ARGV[0]开头匹配到了-
   while (@ARGV >= 2 && $ARGV[0] =~ m:^-:) {
     # parse any options that would normally go to qsub, but which will be ignored here.
     my $switch = shift @ARGV;
     if ($switch eq "-V") {
+      # 这里.是字符串连接
       $ignored_opts .= "-V ";
     } elsif ($switch eq "--max-jobs-run" || $switch eq "-tc") {
       # we do support the option --max-jobs-run n, and its GridEngine form -tc n.
@@ -68,7 +71,9 @@ for (my $x = 1; $x <= 2; $x++) { # This for-loop is to
       }
     }
   }
+  # \w_: 匹配字母数字下划线，\w\d应该是重复了
   if ($ARGV[0] =~ m/^([\w_][\w\d_]*)+=(\d+):(\d+)$/) { # e.g. JOB=1:20
+    # $1: 就是上一次匹配时第一个括号内的内容
     $jobname = $1;
     $jobstart = $2;
     $jobend = $3;
@@ -78,6 +83,7 @@ for (my $x = 1; $x <= 2; $x++) { # This for-loop is to
     if ($jobstart <= 0) {
       die "run.pl: invalid job range $ARGV[0], start must be strictly positive (this is required for GridEngine compatibility).";
     }
+    # 弹出参数 JOB=1:20
     shift;
   } elsif ($ARGV[0] =~ m/^([\w_][\w\d_]*)+=(\d+)$/) { # e.g. JOB=1.
     $jobname = $1;
@@ -99,6 +105,7 @@ if ($max_jobs_run == -1) { # If --max-jobs-run option not set,
                            # and set it based on that.
   $max_jobs_run = 0;
   if ($using_gpu) {
+    # TODO
     if (open(P, "nvidia-smi -L |")) {
       $max_jobs_run++ while (<P>);
       close(P);
@@ -116,6 +123,7 @@ if ($max_jobs_run == -1) { # If --max-jobs-run option not set,
     close(P);
   } elsif (open(P, "sysctl -a |")) {  # BSD/Darwin
     while (<P>) {
+      # \s: 空格, 等同于[\n\t\r\f]
       if (m/hw\.ncpu\s*[:=]\s*(\d+)/) { # hw.ncpu = 4, or hw.ncpu: 4
         $max_jobs_run = $1;
         last;
@@ -145,6 +153,7 @@ if ($max_jobs_run == -1) { # If --max-jobs-run option not set,
 
 $logfile = shift @ARGV;
 
+# TODO
 if (defined $jobname && $logfile !~ m/$jobname/ &&
     $jobend > $jobstart) {
   print STDERR "run.pl: you are trying to run a parallel job but "
@@ -171,6 +180,7 @@ for ($jobid = $jobstart; $jobid <= $jobend; $jobid++) {
 
     # Lets wait for a change in any child's status
     # Then we have to work out which child finished
+    # 销毁僵尸子进程，http://blog.chinaunix.net/uid-25365622-id-3045460.html
     $r = waitpid(-1, 0);
     $code = $?;
     if ($r < 0 ) { die "run.pl: Error waiting for child process"; } # should never happen.
@@ -189,11 +199,13 @@ for ($jobid = $jobstart; $jobid <= $jobend; $jobid++) {
     # However, we just omit this and will reap the next one in the next pass
     # through the for(;;) cycle
   }
+  # fork函数用于创建一个新进程
   $childpid = fork();
   if (!defined $childpid) { die "run.pl: Error forking in run.pl (writing to $logfile)"; }
   if ($childpid == 0) { # We're in the child... this branch
     # executes the job and returns (possibly with an error status).
     if (defined $jobname) {
+      # g: 替换所有匹配的字符串
       $cmd =~ s/$jobname/$jobid/g;
       $logfile =~ s/$jobname/$jobid/g;
     }
@@ -206,6 +218,7 @@ for ($jobid = $jobstart; $jobid <= $jobend; $jobid++) {
     close(F);
 
     # Pipe into bash.. make sure we're not using any other shell.
+    # 在这里执行我们要运行的脚本
     open(B, "|bash") || die "run.pl: Error opening shell command";
     print B "( " . $cmd . ") 2>>$logfile >> $logfile";
     close(B);                   # If there was an error, exit status is in $?
@@ -219,6 +232,7 @@ for ($jobid = $jobstart; $jobid <= $jobend; $jobid++) {
     $endtime = `date +'%s'`;
     open(F, ">>$logfile") || die "run.pl: Error opening log file $logfile (again)";
     $enddate = `date`;
+    # 删除最后一个字符
     chop $enddate;
     print F "# Accounting: time=" . ($endtime - $starttime) . " threads=1\n";
     print F "# Ended ($return_str) at " . $enddate . ", elapsed time " . ($endtime-$starttime) . " seconds\n";

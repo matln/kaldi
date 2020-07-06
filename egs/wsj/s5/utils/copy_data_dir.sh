@@ -60,6 +60,9 @@ set -e;
 
 mkdir -p $destdir
 
+# awk 逐行读入，以空格为默认分隔符将每行切片，切开的部分再进行各种分析处理
+# utt_map:
+#     utt   <prefix>utt<sufix>
 cat $srcdir/utt2spk | awk -v p=$utt_prefix -v s=$utt_suffix '{printf("%s %s%s%s\n", $1, p, $1, s);}' > $destdir/utt_map
 cat $srcdir/spk2utt | awk -v p=$spk_prefix -v s=$spk_suffix '{printf("%s %s%s%s\n", $1, p, $1, s);}' > $destdir/spk_map
 
@@ -71,6 +74,7 @@ else
   cat $srcdir/utt2uniq | awk -v p=$utt_prefix -v s=$utt_suffix '{printf("%s%s%s %s\n", p, $1, s, $2);}' > $destdir/utt2uniq
 fi
 
+# utt spk -> <prefix>utt<sufix> spk -> <prefix>utt<sufix> <prefix>spk<sufix>
 cat $srcdir/utt2spk | utils/apply_map.pl -f 1 $destdir/utt_map  | \
   utils/apply_map.pl -f 2 $destdir/spk_map >$destdir/utt2spk
 
@@ -116,6 +120,7 @@ fi
 if [ -f $srcdir/spk2gender ]; then
   utils/apply_map.pl -f 1 $destdir/spk_map <$srcdir/spk2gender >$destdir/spk2gender
 fi
+# 倒谱均值方差归一化
 if [ -f $srcdir/cmvn.scp ]; then
   utils/apply_map.pl -f 1 $destdir/spk_map <$srcdir/cmvn.scp >$destdir/cmvn.scp
 fi

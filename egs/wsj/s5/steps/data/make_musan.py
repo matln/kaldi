@@ -9,7 +9,7 @@ import os, sys, argparse
 sys.path.append("steps/data/")
 sys.path.insert(0, 'steps/')
 import libs.common as common_lib
-
+<prefix>utt<sufix><prefix>utt<sufix>
 def get_args():
     parser = argparse.ArgumentParser(description="Create MUSAN corpus",
                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)

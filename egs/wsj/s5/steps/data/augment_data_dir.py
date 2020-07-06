@@ -37,7 +37,8 @@ def get_args():
                         dest = "num_bg_noises", default = '1',
                         help='Number of overlapping background noises that we iterate over.'
                             ' For example, if the input is "1:2:3" then the output wavs will have either '
-                            '1, 2, or 3 randomly chosen background noises overlapping the entire recording')
+                            '1, 2, or 3 randomly chosen background noises(从1,'
+                            '2, 3 中随机选一个) overlapping the entire recording')
     parser.add_argument('--fg-interval', type=int,
                         dest = "fg_interval", default = 0,
                         help='Number of seconds between the end of one '
@@ -114,6 +115,7 @@ def augment_wav(utt, wav, dur, fg_snr_opts, bg_snr_opts, fg_noise_utts, \
 
     # Now handle the background noises
     if len(bg_noise_utts) > 0:
+        # num_opts: num_bg_noise
         num = random.choice(num_opts)
         for i in range(0, num):
             noise_utt = random.choice(bg_noise_utts)
@@ -244,6 +246,7 @@ def main():
             bg_noise_utts, noise_wavs, noise_reco2dur, args.fg_interval,
             num_bg_noises)
 
+        # 加上前缀或者后缀
         new_utt = get_new_id(utt, args.utt_modifier_type, args.utt_modifier)
 
         new_utt2wav[new_utt] = new_wav

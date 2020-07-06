@@ -20,6 +20,7 @@ use File::Basename;
 use File::Spec;
 use Getopt::Long;
 
+# 辗转相减法
 sub GetGCD {
   my ($a, $b) = @_;
   while ($a != $b) {

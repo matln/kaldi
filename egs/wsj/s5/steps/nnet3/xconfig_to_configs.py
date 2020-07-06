@@ -19,7 +19,6 @@ sys.path.insert(0, os.path.realpath(os.path.dirname(sys.argv[0])) + '/')
 import libs.nnet3.xconfig.parser as xparser
 import libs.common as common_lib
 
-
 def get_args():
     # we add compulsary arguments as named arguments for readability
     parser = argparse.ArgumentParser(
@@ -184,6 +183,7 @@ def write_config_files(config_dir, all_layers):
     for layer in all_layers:
         try:
             pairs = layer.get_full_config()
+            # config_basename: ref, init, final
             for config_basename, line in pairs:
                 config_basename_to_lines[config_basename].append(line)
         except Exception as e:
@@ -244,6 +244,16 @@ def add_nnet_context_info(config_dir, nnet_edits=None,
         model = "nnet3-copy --edits='{0}' {1} - |".format(nnet_edits,
                                                           model)
     out = common_lib.get_command_stdout('nnet3-info "{0}"'.format(model))
+    # Add by myself
+    f_info = open("{0}/ref.raw.info".format(config_dir), 'w')
+    print('# This file was created by the command:\n'
+          '# nnet3-info "{0}"\n'
+          '# which is called in func:\n'
+          '#     add_nnet_context_info(args.config_dir, args.nnet_edits,'
+          '# existing_model=args.existing_model)\n'
+          '# This func is in steps/nnet3/xconfig_to_configs.py'.format(model), file=f_info)
+    print(out, file=f_info)
+    f_info.close()
     # out looks like this
     # left-context: 7
     # right-context: 0
@@ -291,6 +301,7 @@ def check_model_contexts(config_dir, nnet_edits=None, existing_model=None):
                 parts = line.split(":")
                 if len(parts) != 2:
                     continue
+                # strip(): 移除字符串头尾指定字符（默认空格）
                 key = parts[0].strip()
                 value = int(parts[1].strip())
                 if key in ['left-context', 'right-context']:
@@ -323,6 +334,7 @@ def main():
     all_layers = xparser.read_xconfig_file(args.xconfig_file, existing_layers)
     write_expanded_xconfig_files(args.config_dir, all_layers)
     write_config_files(args.config_dir, all_layers)
+    # 这里生成了 ref.raw
     check_model_contexts(args.config_dir, args.nnet_edits,
                          existing_model=args.existing_model)
     add_nnet_context_info(args.config_dir, args.nnet_edits,
